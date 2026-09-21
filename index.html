@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f5ef" />
+    <meta name="description" content="Le Marché, votre catalogue de supermarché." />
+    <title>Le Marché — Catalogue</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="Le Marché, accueil">
+          <span class="brand-mark" aria-hidden="true">✳</span>
+          <span>
+            <strong>Le Marché</strong>
+            <small>Le bon choix, simplement.</small>
+          </span>
+        </a>
+        <button class="cart-button" data-view="cart" aria-label="Voir le panier">
+          <span aria-hidden="true">◌</span>
+          <span>Panier</span>
+          <b class="cart-count" aria-live="polite">0</b>
+        </button>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="hero-title">
+          <div>
+            <p class="eyebrow">Votre sélection de la semaine</p>
+            <h1 id="hero-title">Les essentiels<br /><em>du quotidien.</em></h1>
+            <p class="hero-copy">Des produits choisis avec soin, livrés dans votre panier en quelques clics.</p>
+          </div>
+          <span class="hero-sticker" aria-hidden="true">frais<br />& local</span>
+        </section>
+
+        <section class="catalogue-view" data-page="catalogue">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">À découvrir</p>
+              <h2>Le catalogue</h2>
+            </div>
+            <span class="product-total">12 produits</span>
+          </div>
+          <nav class="category-tabs" aria-label="Catégories de produits">
+            <button class="category-tab is-active" data-category="Tous">Tout</button>
+            <button class="category-tab" data-category="Légumes">Légumes</button>
+            <button class="category-tab" data-category="Viandes">Viandes</button>
+            <button class="category-tab" data-category="Produits laitiers">Laitiers</button>
+            <button class="category-tab" data-category="Épicerie">Épicerie</button>
+          </nav>
+          <div class="product-grid" id="product-grid"></div>
+        </section>
+
+        <section class="cart-view is-hidden" data-page="cart" aria-labelledby="cart-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Votre sélection</p>
+              <h2 id="cart-title">Mon panier</h2>
+            </div>
+            <button class="back-link" data-view="catalogue">← Continuer mes achats</button>
+          </div>
+          <div id="cart-content"></div>
+        </section>
+      </main>
+
+      <nav class="bottom-nav" aria-label="Navigation principale">
+        <button class="bottom-nav-item is-active" data-view="catalogue">
+          <span aria-hidden="true">⌂</span><span>Catalogue</span>
+        </button>
+        <button class="bottom-nav-item" data-view="cart">
+          <span class="nav-cart-icon" aria-hidden="true">◌</span><span>Panier</span>
+          <b class="nav-count cart-count">0</b>
+        </button>
+      </nav>
+    </div>
+    <div class="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
