@@ -62,8 +62,11 @@ app.MapGet("/api/products", async (Database db, ClaimsPrincipal principal) =>
     return Results.Ok(products);
 }).RequireAuthorization();
 
-app.MapPost("/api/sales", async (CreateSaleRequest request, Database db, ClaimsPrincipal principal) =>
+app.MapPost("/api/sales", async (HttpRequest httpRequest, Database db, ClaimsPrincipal principal) =>
 {
+    var request = await httpRequest.ReadFromJsonAsync<CreateSaleRequest>();
+    if (request is null)
+        return Results.BadRequest(new { error = "Corps de requête de vente invalide." });
     if (request.Lines is null || request.Lines.Count == 0)
         return Results.BadRequest(new { error = "Le ticket doit contenir au moins une ligne." });
     if (request.PaymentMethod.Equals("Espèces", StringComparison.OrdinalIgnoreCase) && request.AmountReceived < request.Total)
@@ -78,12 +81,12 @@ app.MapPost("/api/sales", async (CreateSaleRequest request, Database db, ClaimsP
         var saleId = Guid.NewGuid();
         var inserted = await connection.ExecuteAsync(
             "insert into sales(id,cashier_id,payment_method,subtotal,discount,total,amount_received,change_due,idempotency_key) values(@saleId,@cashierId,@PaymentMethod,@Subtotal,@Discount,@Total,@AmountReceived,@ChangeDue,@IdempotencyKey)",
-            new { saleId, cashierId, request.PaymentMethod, request.Subtotal, request.Discount, request.Total, ChangeDue = request.AmountReceived - request.Total, request.IdempotencyKey }, transaction);
+            new { saleId, cashierId, request.PaymentMethod, request.Subtotal, request.Discount, request.Total, AmountReceived = request.AmountReceived, ChangeDue = request.AmountReceived - request.Total, request.IdempotencyKey }, transaction);
         if (inserted != 1) throw new InvalidOperationException("Échec de création du ticket.");
         foreach (var line in request.Lines)
         {
             var product = await connection.QuerySingleOrDefaultAsync<Product>(
-                "select id, code, designation, sale_price as SalePrice, stock_quantity as StockQuantity from products where code=@Code for update",
+                "select id, code, designation, category, purchase_price as PurchasePrice, sale_price as SalePrice, stock_quantity as StockQuantity, low_stock_threshold as LowStockThreshold from products where code=@Code for update",
                 new { line.Code }, transaction);
             if (product is null) throw new InvalidOperationException($"Article inconnu : {line.Code}");
             if (line.Quantity <= 0 || product.StockQuantity < line.Quantity)
@@ -113,7 +116,7 @@ app.MapPost("/api/sales", async (CreateSaleRequest request, Database db, ClaimsP
         await transaction.RollbackAsync();
         return Results.BadRequest(new { error = ex.Message });
     }
-});
+}).RequireAuthorization();
 
 app.MapGet("/api/audit", async (Database db, ClaimsPrincipal principal) =>
 {
@@ -141,8 +144,25 @@ static async Task EnsureDatabaseAsync(IServiceProvider services, IConfiguration 
 }
 
 public sealed record LoginRequest(string Username, string Password);
-public sealed record SaleLineRequest(string Code, decimal Quantity, decimal UnitPrice, decimal Discount, decimal LineTotal);
-public sealed record CreateSaleRequest(string PaymentMethod, decimal Subtotal, decimal Discount, decimal Total, decimal AmountReceived, Guid IdempotencyKey, List<SaleLineRequest> Lines);
+public sealed class SaleLineRequest
+{
+    public string Code { get; init; } = string.Empty;
+    public decimal Quantity { get; init; }
+    public decimal UnitPrice { get; init; }
+    public decimal Discount { get; init; }
+    public decimal LineTotal { get; init; }
+}
+
+public sealed class CreateSaleRequest
+{
+    public string PaymentMethod { get; init; } = string.Empty;
+    public decimal Subtotal { get; init; }
+    public decimal Discount { get; init; }
+    public decimal Total { get; init; }
+    public decimal AmountReceived { get; init; }
+    public Guid IdempotencyKey { get; init; }
+    public List<SaleLineRequest> Lines { get; init; } = [];
+}
 public sealed record Product(Guid Id, string Code, string Designation, string? Category, decimal PurchasePrice, decimal SalePrice, decimal StockQuantity, decimal LowStockThreshold);
 public sealed record UserRecord(Guid Id, string Username, string DisplayName, string Role, string PasswordHash);
 
