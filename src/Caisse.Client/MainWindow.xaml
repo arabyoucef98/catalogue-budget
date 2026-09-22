@@ -1,0 +1,22 @@
+<Window x:Class="Caisse.Client.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Caisse réseau" Height="520" Width="920" WindowStartupLocation="CenterScreen">
+  <Grid Margin="24">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <TextBlock Text="CAISSE — NOUVELLE VENTE" FontSize="24" FontWeight="Bold"/>
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,18,0,12">
+      <TextBlock Text="Utilisateur" VerticalAlignment="Center"/>
+      <TextBox x:Name="UsernameBox" Width="100" Text="admin" Margin="8,0,8,0"/>
+      <PasswordBox x:Name="PasswordBox" Width="120" Margin="0,0,8,0"/>
+      <Button Content="Connexion" Width="95" Click="Login_Click" Margin="0,0,18,0"/>
+      <TextBlock Text="Code article" VerticalAlignment="Center"/>
+      <TextBox x:Name="CodeBox" Width="180" Margin="12,0,8,0" KeyDown="CodeBox_KeyDown"/>
+      <TextBlock Text="Quantité" VerticalAlignment="Center"/>
+      <TextBox x:Name="QuantityBox" Width="80" Text="1" Margin="12,0,8,0"/>
+      <Button x:Name="AddButton" Content="Ajouter" Width="100" Click="Add_Click" IsEnabled="False"/>
+    </StackPanel>
+    <DataGrid x:Name="LinesGrid" Grid.Row="2" AutoGenerateColumns="True" IsReadOnly="True"/>
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+      <TextBlock x:Name="TotalText" Text="Total : 0,00 DZD" FontSize="18" FontWeight="Bold" Margin="0,0,18,0"/>
+      <Button x:Name="ValidateButton" Content="Valider la vente" Width="150" Click="Validate_Click" IsEnabled="False"/>
+    </StackPanel>
+  </Grid>
+</Window>
