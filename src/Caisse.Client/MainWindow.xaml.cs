@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Windows;
 using System.Windows.Input;
@@ -9,7 +10,6 @@ public partial class MainWindow : Window
 {
     private readonly ObservableCollection<SaleLine> _lines = [];
     private readonly HttpClient _http = new() { BaseAddress = new Uri("http://localhost:5080") };
-    private bool _isAuthenticated;
     public MainWindow()
     {
         InitializeComponent();
@@ -23,7 +23,6 @@ public partial class MainWindow : Window
         if (!response.IsSuccessStatusCode) { MessageBox.Show("Identifiants invalides."); return; }
         var login = await response.Content.ReadFromJsonAsync<LoginResponse>();
         _http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", login!.Token);
-        _isAuthenticated = true;
         AddButton.IsEnabled = true;
         ValidateButton.IsEnabled = true;
         MessageBox.Show($"Bienvenue {login.User.DisplayName}.");
