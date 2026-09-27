@@ -33,7 +33,8 @@ CREATE TABLE IF NOT EXISTS sales (
     amount_received numeric(18,2) NOT NULL CHECK (amount_received >= total),
     change_due numeric(18,2) NOT NULL CHECK (change_due >= 0),
     created_at timestamptz NOT NULL DEFAULT now(),
-    idempotency_key uuid NOT NULL UNIQUE
+    idempotency_key uuid NOT NULL UNIQUE,
+    request_hash varchar(64)
 );
 
 CREATE TABLE IF NOT EXISTS sale_lines (

@@ -1,18 +1,22 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Windows;
 using System.Windows.Input;
+using Microsoft.Win32;
 
 namespace Caisse.Client;
 
 public partial class MainWindow : Window
 {
     private readonly ObservableCollection<SaleLine> _lines = [];
-    private readonly HttpClient _http = new() { BaseAddress = new Uri("http://localhost:5080") };
+    private readonly HttpClient _http = new() { BaseAddress = new Uri(App.ApiBaseUrl) };
     private List<Product> _products = [];
+    private string? _previewFilePath;
+    private string? _previewHash;
 
     public MainWindow()
     {
@@ -49,6 +53,7 @@ public partial class MainWindow : Window
             AddButton.IsEnabled = true;
             RefreshButton.IsEnabled = true;
             ValidateButton.IsEnabled = true;
+            ImportTab.IsEnabled = string.Equals(login.User.Role, "Administrateur", StringComparison.Ordinal);
             await LoadProductsAsync();
             CodeBox.Focus();
         }
@@ -72,6 +77,110 @@ public partial class MainWindow : Window
     {
         _products = await _http.GetFromJsonAsync<List<Product>>("/api/products") ?? [];
         UserText.Text = $"{UserText.Text.Split(" - ")[0]} - {_products.Count} article(s)";
+    }
+
+    private async void SelectWorkbook_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Choisir le classeur XLSM à prévisualiser",
+            Filter = "Classeur Excel avec macros (*.xlsm)|*.xlsm",
+            CheckFileExists = true,
+            Multiselect = false
+        };
+        if (dialog.ShowDialog(this) != true)
+            return;
+
+        _previewFilePath = dialog.FileName;
+        _previewHash = null;
+        ApplyImportButton.IsEnabled = false;
+        ImportPreviewGrid.ItemsSource = null;
+        ImportStatusText.Text = "Lecture et validation du classeur…";
+        SelectWorkbookButton.IsEnabled = false;
+        try
+        {
+            using var content = CreateWorkbookContent(dialog.FileName);
+            using var response = await _http.PostAsync("api/admin/products/import/preview", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var details = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException($"Prévisualisation refusée ({(int)response.StatusCode}) : {details}");
+            }
+
+            var preview = await response.Content.ReadFromJsonAsync<ProductImportPreview>()
+                ?? throw new InvalidOperationException("Réponse de prévisualisation invalide.");
+            ImportPreviewGrid.ItemsSource = preview.Items;
+            _previewHash = preview.Sha256;
+            ImportStatusText.Text = preview.IsValid
+                ? $"{preview.Count} article(s) validé(s). Vérifiez les lignes avant d’appliquer."
+                : $"{preview.Count} article(s), {preview.Issues.Count} erreur(s) : {string.Join(" | ", preview.Issues.Take(5).Select(issue => $"Ligne {issue.RowNumber}, {issue.Field} : {issue.Message}"))}";
+            ApplyImportButton.IsEnabled = preview.IsValid;
+        }
+        catch (Exception ex)
+        {
+            ImportStatusText.Text = "Prévisualisation échouée.";
+            MessageBox.Show(ex.Message, "Import catalogue", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            SelectWorkbookButton.IsEnabled = true;
+        }
+    }
+
+    private async void ApplyImport_Click(object sender, RoutedEventArgs e)
+    {
+        if (_previewFilePath is null || _previewHash is null)
+            return;
+        var confirmation = MessageBox.Show(
+            "Les stocks des articles importés remplaceront les stocks actuels. Les différences seront inscrites dans l’historique. Les articles absents du fichier ne seront pas supprimés.\n\nAppliquer cette importation ?",
+            "Confirmer l’import catalogue",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (confirmation != MessageBoxResult.Yes)
+            return;
+
+        ApplyImportButton.IsEnabled = false;
+        SelectWorkbookButton.IsEnabled = false;
+        ImportStatusText.Text = "Import transactionnel en cours…";
+        try
+        {
+            using var content = CreateWorkbookContent(_previewFilePath);
+            content.Add(new StringContent(_previewHash), "previewHash");
+            using var response = await _http.PostAsync("api/admin/products/import/apply", content);
+            if (!response.IsSuccessStatusCode)
+            {
+                var details = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException($"Import refusé ({(int)response.StatusCode}) : {details}");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<ProductImportApplyResponse>()
+                ?? throw new InvalidOperationException("Réponse d’import invalide.");
+            ImportStatusText.Text = $"Import réussi : {result.Inserted} ajouté(s), {result.Updated} mis à jour, {result.StockAdjustments} mouvement(s) de stock.";
+            _previewHash = null;
+            _previewFilePath = null;
+            await LoadProductsAsync();
+            MessageBox.Show(ImportStatusText.Text, "Import catalogue", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            ImportStatusText.Text = "Import échoué. Prévisualisez à nouveau avant de réessayer.";
+            _previewHash = null;
+            MessageBox.Show(ex.Message, "Import catalogue", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            ApplyImportButton.IsEnabled = false;
+            SelectWorkbookButton.IsEnabled = true;
+        }
+    }
+
+    private static MultipartFormDataContent CreateWorkbookContent(string path)
+    {
+        var content = new MultipartFormDataContent();
+        var file = new StreamContent(File.OpenRead(path));
+        file.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.ms-excel.sheet.macroEnabled.12");
+        content.Add(file, "file", Path.GetFileName(path));
+        return content;
     }
 
     private void AddLine()
@@ -203,6 +312,12 @@ public partial class MainWindow : Window
     private sealed record LoginResponse(string Token, LoginUser User);
     private sealed record LoginUser(Guid Id, string Username, string DisplayName, string Role);
     private sealed record SaleResponse(Guid Id, long TicketNumber, decimal Total);
+    private sealed record ProductImportPreview(string Sha256, int Count, bool IsValid,
+        List<ProductImportRow> Items, List<ProductImportIssue> Issues);
+    private sealed record ProductImportRow(string Code, string Designation, string? Category,
+        decimal PurchasePrice, decimal SalePrice, decimal StockQuantity, decimal LowStockThreshold, int RowNumber);
+    private sealed record ProductImportIssue(int RowNumber, string Field, string Message);
+    private sealed record ProductImportApplyResponse(int Count, int Inserted, int Updated, int StockAdjustments, string Sha256);
     private sealed record SaleLine(string Code, string Designation, decimal Quantity, decimal UnitPrice,
         decimal Discount, decimal LineTotal);
 }

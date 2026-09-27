@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Caisse.Server", "src\Caisse
 EndProject
 Project("{60DC8134-EBA5-43B8-BCC9-BB4BC16C2548}") = "Caisse.Client", "src\Caisse.Client\Caisse.Client.csproj", "{B2B2B2B2-2222-4222-8222-222222222222}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Caisse.Server.Tests", "src\Caisse.Server.Tests\Caisse.Server.Tests.csproj", "{C3C3C3C3-3333-4333-8333-333333333333}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{B2B2B2B2-2222-4222-8222-222222222222}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B2B2B2B2-2222-4222-8222-222222222222}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B2B2B2B2-2222-4222-8222-222222222222}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3C3C3C3-3333-4333-8333-333333333333}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3C3C3C3-3333-4333-8333-333333333333}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3C3C3C3-3333-4333-8333-333333333333}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3C3C3C3-3333-4333-8333-333333333333}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

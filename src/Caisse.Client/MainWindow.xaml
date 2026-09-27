@@ -31,17 +31,50 @@
                 IsEnabled="False" Margin="8,0,0,0"/>
       </WrapPanel>
     </Border>
-    <DataGrid x:Name="LinesGrid" Grid.Row="2" AutoGenerateColumns="False"
-              IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single"
-              HeadersVisibility="Column">
-      <DataGrid.Columns>
-        <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="120"/>
-        <DataGridTextColumn Header="Désignation" Binding="{Binding Designation}" Width="*"/>
-        <DataGridTextColumn Header="Qté" Binding="{Binding Quantity, StringFormat=N0}" Width="70"/>
-        <DataGridTextColumn Header="Prix unitaire" Binding="{Binding UnitPrice, StringFormat=N2}" Width="110"/>
-        <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="110"/>
-      </DataGrid.Columns>
-    </DataGrid>
+    <TabControl Grid.Row="2">
+      <TabItem Header="Vente">
+        <DataGrid x:Name="LinesGrid" AutoGenerateColumns="False"
+                  IsReadOnly="True" CanUserAddRows="False" SelectionMode="Single"
+                  HeadersVisibility="Column">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="120"/>
+            <DataGridTextColumn Header="Désignation" Binding="{Binding Designation}" Width="*"/>
+            <DataGridTextColumn Header="Qté" Binding="{Binding Quantity, StringFormat=N0}" Width="70"/>
+            <DataGridTextColumn Header="Prix unitaire" Binding="{Binding UnitPrice, StringFormat=N2}" Width="110"/>
+            <DataGridTextColumn Header="Total" Binding="{Binding LineTotal, StringFormat=N2}" Width="110"/>
+          </DataGrid.Columns>
+        </DataGrid>
+      </TabItem>
+      <TabItem x:Name="ImportTab" Header="Import catalogue" IsEnabled="False">
+        <Grid Margin="12">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+          </Grid.RowDefinitions>
+          <DockPanel Margin="0,0,0,12">
+            <Button x:Name="SelectWorkbookButton" Content="Choisir un fichier XLSM"
+                    Click="SelectWorkbook_Click" Padding="10,6" DockPanel.Dock="Left"/>
+            <Button x:Name="ApplyImportButton" Content="Appliquer l’import"
+                    Click="ApplyImport_Click" Padding="10,6" Margin="8,0,0,0"
+                    IsEnabled="False" DockPanel.Dock="Right"/>
+            <TextBlock x:Name="ImportStatusText" Text="Sélectionnez le classeur XLSM à prévisualiser."
+                       VerticalAlignment="Center" Margin="12,0"/>
+          </DockPanel>
+          <DataGrid x:Name="ImportPreviewGrid" Grid.Row="1" AutoGenerateColumns="False"
+                    IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Ligne Excel" Binding="{Binding RowNumber}" Width="100"/>
+              <DataGridTextColumn Header="Code" Binding="{Binding Code}" Width="120"/>
+              <DataGridTextColumn Header="Désignation" Binding="{Binding Designation}" Width="*"/>
+              <DataGridTextColumn Header="Catégorie" Binding="{Binding Category}" Width="160"/>
+              <DataGridTextColumn Header="Achat" Binding="{Binding PurchasePrice, StringFormat=N2}" Width="100"/>
+              <DataGridTextColumn Header="Vente TTC" Binding="{Binding SalePrice, StringFormat=N2}" Width="100"/>
+              <DataGridTextColumn Header="Stock" Binding="{Binding StockQuantity, StringFormat=N3}" Width="90"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Grid>
+      </TabItem>
+    </TabControl>
     <Border Grid.Row="3" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="6"
             Padding="12" Margin="0,16,0,0">
       <Grid>
