@@ -17,11 +17,13 @@ public partial class MainWindow : Window
     private List<Product> _products = [];
     private string? _previewFilePath;
     private string? _previewHash;
+    private bool _isInitialized;
 
     public MainWindow()
     {
         InitializeComponent();
         LinesGrid.ItemsSource = _lines;
+        _isInitialized = true;
         UpdateTotals();
     }
 
@@ -296,6 +298,9 @@ public partial class MainWindow : Window
 
     private void UpdateTotals()
     {
+        if (!_isInitialized)
+            return;
+
         var total = TotalValue();
         TotalText.Text = $"Total : {total:N2} DZD";
         var received = TryReadDecimal(ReceivedBox?.Text, out var value) ? value : 0;
