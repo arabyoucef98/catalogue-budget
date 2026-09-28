@@ -1,0 +1,9 @@
+.git
+.env
+.env.*
+**/bin
+**/obj
+/publish
+/src/Caisse.Client
+/src/Caisse.Server.Tests
+TestResults
